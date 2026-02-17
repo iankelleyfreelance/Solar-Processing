@@ -1,10 +1,14 @@
 # Colorization
+# import
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import PowerNorm, AsinhNorm, LinearSegmentedColormap
 import sunpy.visualization.colormaps
 import easygui
-import imageio.v3 as iio
+import tifffile
+import json
+from datetime import datetime
+from pngmeta import PngMeta
 
 # Hydrogen-Alpha Colormap
 
@@ -17,15 +21,13 @@ halpha_red = LinearSegmentedColormap.from_list(
 )
 
 # open file select menu
-import easygui
 file_path = easygui.fileopenbox()
 
 # import tiff
-import imageio.v3 as iio
-data = iio.imread(file_path)
+data = tifffile.imread(file_path)
 
 # check data
-print("Loaded Data: ", data.shape, data.dtype)
+print("\nLoaded Data: ", data.shape, data.dtype)
 
 # get name
 name = input("\nEnter file name (YYYY-MM-DDTHH_MM_SSNXXX): ").strip()
@@ -54,21 +56,59 @@ elif c == "2":
 elif c == "3": 
     cmap = plt.colormaps['hinodesotintensity']
 else:
-    cmap = plt.colormaps["grayscale"]
+    cmap = plt.colormaps["gray"]
 
 
-# output specifically the ground truth to save the data with similar format
-iio.imwrite(
+# output specifically the ground truth to save the data with similar format.
+# Also, apply metadata explaining instrument, normalization used, colormap, and when made.
+
+tiff_metadata = {
+    "instrument": "H-alpha solar telescope",
+    "normalization": (
+        "linear" if norming is None
+        else type(norming).__name__
+    ),
+    "norm_param": (
+        None if norming is None
+        else vars(norming)
+    ),
+    "colormap": cmap.name,
+    "created_utc": datetime.utcnow().isoformat() + "Z",
+    "software": "Custom H-alpha pipeline (Python)"
+}
+
+tifffile.imwrite(
     name + "_linear.tif",
-    data.astype("uint16")
+    data.astype("uint16"),
+    description=json.dumps(tiff_metadata, indent=2)
 )
 
 # save colored image
-rgb = cmap(norming(data))  # data -> normalized -> RGBA
+if norming is None:
+    rgb = cmap(data)
+else:
+    rgb = cmap(norming(data))  # data -> normalized -> RGBA
+    
 plt.imsave(name + "_display.png", rgb)
+
+# go ahead and add metadata with what options were used
+
+meta = PngMeta(name + "_display.png")
+
+meta["Title"] = "H-alpha Solar Image"
+meta["Normalization"] = (
+    "linear" if norming is None
+    else type(norming).__name__
+)
+meta["Colormap"] = cmap.name
+meta["Comment"] = json.dumps(tiff_metadata, indent=2)
+meta["Software"] = "Custom H-alpha pipeline (Python)"
+
+meta.save()
 
 plt.figure(figsize=(6, 6))
 plt.imshow(data, cmap=cmap, norm=norming)
 plt.colorbar()
 plt.title("Preview")
 plt.show()
+
