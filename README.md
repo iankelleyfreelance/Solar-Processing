@@ -14,7 +14,9 @@ python Colorization.py
 #### Normalization
 - Perhaps the biggest thing that impacts the quality of the image.
 - PowerNorm - Applies intensity to some specified power. Stretches dark end and compresses bright end. Good for structure.
+-   Gamma should be between 0 and 1 ideally.
 - Asinh - Applies inverse sinh function. Linear_width is the cutoff below which there is linear and above which there is log. Prominences, disk, local. Good to see everything.
+-   Linear_width is usually between 0 and .1.
 - None - Linear. This is the most basic (and therefore should be saved for TIFF files for later processing!), but the dynamic range is so vast that details can be hard to pull out.
 
 #### Colormaps
