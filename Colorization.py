@@ -7,7 +7,7 @@ import sunpy.visualization.colormaps
 import easygui
 import tifffile
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pngmeta import PngMeta
 
 # Hydrogen-Alpha Colormap
@@ -62,18 +62,24 @@ else:
 # output specifically the ground truth to save the data with similar format.
 # Also, apply metadata explaining instrument, normalization used, colormap, and when made.
 
+if norming is None:
+    norm_name = "linear"
+    norm_param = None
+elif isinstance(norming, PowerNorm):
+    norm_name = "PowerNorm"
+    norm_param = {"gamma": norming.gamma}
+elif isinstance(norming, AsinhNorm):
+    norm_name = "AsinhNorm"
+    norm_param = {"linear_width": norming.linear_width}
+
+
 tiff_metadata = {
     "instrument": "H-alpha solar telescope",
-    "normalization": (
-        "linear" if norming is None
-        else type(norming).__name__
-    ),
-    "norm_param": (
-        None if norming is None
-        else vars(norming)
-    ),
+    "normalization": norm_name,
+    "norm_param": norm_param,
     "colormap": cmap.name,
-    "created_utc": datetime.utcnow().isoformat() + "Z",
+
+    "created_utc": datetime.now(timezone.utc).isoformat() + "Z",
     "software": "Custom H-alpha pipeline (Python)"
 }
 
