@@ -38,7 +38,7 @@ if n=="1":
     g = float(input("\nEnter desired gamma value for normalization (0-1): ").strip())
     norming = PowerNorm(gamma=g)
 elif n=="2":
-    g = float(input("\nEnter desired linear_width for normalization (0-1):").strip())
+    g = float(input("\nEnter desired linear_width for normalization (0-.1 or so):").strip())
     norming = AsinhNorm(linear_width=g)
 elif n == "3":
     norming=None
@@ -48,7 +48,7 @@ else:
 
 
 # pick colormap    
-c = input("\nEnter 1 for gist_heat, 2 for halpha color map, and 3 for 'hinodesotintensity'")
+c = input("\nEnter 1 for gist_heat, 2 for halpha color map, and 3 for 'hinodesotintensity': ")
 if c == "1":
     cmap = plt.colormaps["gist_heat"]
 elif c == "2":
