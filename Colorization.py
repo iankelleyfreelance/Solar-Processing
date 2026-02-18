@@ -20,101 +20,128 @@ halpha_red = LinearSegmentedColormap.from_list(
      (1.0, 0.9, 0.9)]
 )
 
-# open file select menu
-file_path = easygui.fileopenbox()
-
-# import tiff
-data = tifffile.imread(file_path)
-
-# check data
-print("\nLoaded Data: ", data.shape, data.dtype)
-
-# get name
-name = input("\nEnter file name (YYYY-MM-DDTHH_MM_SSNXXX): ").strip()
-
-# pick normalization
-n = input("\nEnter 1 for PowerNorm, 2 for AsinhNorm, or 3 for Linear: ")
-if n=="1":
-    g = float(input("\nEnter desired gamma value for normalization (0-1): ").strip())
-    norming = PowerNorm(gamma=g)
-elif n=="2":
-    g = float(input("\nEnter desired linear_width for normalization (0-.1 or so):").strip())
-    norming = AsinhNorm(linear_width=g)
-elif n == "3":
-    norming=None
-else:
-    input("\nInvalid input. Please try again. Default .6 gamma and .05 linear width. ")
-    quit()
 
 
-# pick colormap    
-c = input("\nEnter 1 for gist_heat, 2 for halpha color map, and 3 for 'hinodesotintensity': ")
-if c == "1":
-    cmap = plt.colormaps["gist_heat"]
-elif c == "2":
-    cmap = halpha_red
-elif c == "3": 
-    cmap = plt.colormaps['hinodesotintensity']
-else:
-    cmap = plt.colormaps["gray"]
+
+def COL_GEN(file_path,data):
+    # get name
+    name = input("\nEnter file name (YYYY-MM-DDTHH_MM_SSNXXX): ").strip()
+
+    # pick normalization
+    n = input("\nEnter 1 for PowerNorm, 2 for AsinhNorm, or 3 for Linear: ")
+    if n=="1":
+        g = float(input("\nEnter desired gamma value for normalization (0-1): ").strip())
+        norming = PowerNorm(gamma=g)
+    elif n=="2":
+        g = float(input("\nEnter desired linear_width for normalization (0-.1 or so):").strip())
+        norming = AsinhNorm(linear_width=g)
+    elif n == "3":
+        norming=None
+    else:
+        input("\nInvalid input. Please try again. Default .6 gamma and .05 linear width. ")
+        quit()
 
 
-# output specifically the ground truth to save the data with similar format.
-# Also, apply metadata explaining instrument, normalization used, colormap, and when made.
-
-if norming is None:
-    norm_name = "linear"
-    norm_param = None
-elif isinstance(norming, PowerNorm):
-    norm_name = "PowerNorm"
-    norm_param = {"gamma": norming.gamma}
-elif isinstance(norming, AsinhNorm):
-    norm_name = "AsinhNorm"
-    norm_param = {"linear_width": norming.linear_width}
+    # pick colormap    
+    c = input("\nEnter 1 for gist_heat, 2 for halpha color map, and 3 for 'hinodesotintensity': ")
+    if c == "1":
+        cmap = plt.colormaps["gist_heat"]
+    elif c == "2":
+        cmap = halpha_red
+    elif c == "3": 
+        cmap = plt.colormaps['hinodesotintensity']
+    else:
+        cmap = plt.colormaps["gray"]
 
 
-tiff_metadata = {
-    "instrument": "H-alpha solar telescope",
-    "normalization": norm_name,
-    "norm_param": norm_param,
-    "colormap": cmap.name,
+    # output specifically the ground truth to save the data with similar format.
+    # Also, apply metadata explaining instrument, normalization used, colormap, and when made.
 
-    "created_utc": datetime.now(timezone.utc).isoformat() + "Z",
-    "software": "Custom H-alpha pipeline (Python)"
-}
+    if norming is None:
+        norm_name = "linear"
+        norm_param = None
+    elif isinstance(norming, PowerNorm):
+        norm_name = "PowerNorm"
+        norm_param = {"gamma": norming.gamma}
+    elif isinstance(norming, AsinhNorm):
+        norm_name = "AsinhNorm"
+        norm_param = {"linear_width": norming.linear_width}
 
-tifffile.imwrite(
-    name + "_linear.tif",
-    data.astype("uint16"),
-    description=json.dumps(tiff_metadata, indent=2)
-)
 
-# save colored image
-if norming is None:
-    rgb = cmap(data)
-else:
-    rgb = cmap(norming(data))  # data -> normalized -> RGBA
-    
-plt.imsave(name + "_display.png", rgb)
+    tiff_metadata = {
+        "instrument": "H-alpha solar telescope",
+        "software": "Custom H-alpha pipeline (Python)"
+    }
 
-# go ahead and add metadata with what options were used
+    tifffile.imwrite(
+        name + "_linear.tif",
+        data.astype("uint16"),
+        description=json.dumps(tiff_metadata, indent=2)
+    )
 
-meta = PngMeta(name + "_display.png")
+    # save colored image
+    if norming is None:
+        rgb = cmap(data)
+    else:
+        rgb = cmap(norming(data))  # data -> normalized -> RGBA
+        
+    plt.imsave(name + "_display.png", rgb)
 
-meta["Title"] = "H-alpha Solar Image"
-meta["Normalization"] = (
-    "linear" if norming is None
-    else type(norming).__name__
-)
-meta["Colormap"] = cmap.name
-meta["Comment"] = json.dumps(tiff_metadata, indent=2)
-meta["Software"] = "Custom H-alpha pipeline (Python)"
+    # go ahead and add metadata with what options were used
 
-meta.save()
+    meta = PngMeta(name + "_display.png")
 
-plt.figure(figsize=(6, 6))
-plt.imshow(data, cmap=cmap, norm=norming)
-plt.colorbar()
-plt.title("Preview")
-plt.show()
+    meta["Title"] = "H-alpha Solar Image"
+    meta["Normalization"] = (
+        "linear" if norming is None
+        else type(norming).__name__
+    )
+    meta["Colormap"] = cmap.name
+    meta["Comment"] = json.dumps(tiff_metadata, indent=2)
+    meta["Software"] = "Custom H-alpha pipeline (Python)"
 
+    meta.save()
+
+    plt.figure(figsize=(6, 6))
+    plt.imshow(data, cmap=cmap, norm=norming)
+    plt.colorbar()
+    plt.title("Preview")
+    plt.show()
+
+def IMA_TES(data):
+    print("This may take some time")
+    for i in range(1,17):
+        plt.subplot(4,4,i)
+        plt.imshow(plt.colormaps['gist_heat'](PowerNorm(gamma=float(i/16))(data)))
+        plt.title(f'Gamma: {i/16}')
+        print(f'{i}/16')
+
+    plt.show()
+
+    for i in range(1,17):
+        plt.subplot(4,4,i)
+        plt.imshow(plt.colormaps['gist_heat'](AsinhNorm(linear_width=float(i/16))(data)))
+        plt.title(f'Linear Width: {i/16}')
+        print(f'{i}/16')
+
+    plt.show()
+
+def main():
+    # open file select menu
+    path = easygui.fileopenbox()
+
+    # import tiff
+    image = tifffile.imread(path)
+
+    # check data
+    print("\nLoaded Data: ", image.shape, image.dtype)
+
+    # select between seeing options or processing images.
+    choice = input("Please type 1 to continue, or press enter for test mode (changes will not be saved): ")
+    if choice == "1":
+        COL_GEN(path, image)
+    else:
+        IMA_TES(image)
+
+if __name__ == "__main__":
+    main()
