@@ -5,7 +5,7 @@ This is a repository for the processing of images taken with a Hydrogen-Alpha te
 
 To run colorization, download the python script and run the following commands (typically within a venv). 
 ```
-pip install numpy matplotlib sunpy[all] tifffile pngmeta easygui
+python -m pip install numpy matplotlib sunpy[all] tifffile pngmeta easygui
 python Colorization.py
 ```
 
