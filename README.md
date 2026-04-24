@@ -27,7 +27,7 @@ python Colorization.py
 ## Coordinate Guide
 To run image comparison (to see how the Sun changed in a day):
 ```
-python -m pip install matplotlib tikinter
+python -m pip install matplotlib tkinter
 python compare_images.py
 ```
 Select the image **in the folder containing your TIF image files (rotation corrected!) and your JPG files.**
