@@ -5,15 +5,17 @@ import datetime
 
 def find_matching_image(tif_filename):
     """
-    Given a TIF filename (e.g., 2026-02-20T16_05_02_rotated.tif),
+    Given a TIF filename (e.g., 2026-02-20T16_05_02_rotated.tif or Images\2026-04-16T17_35_23_rotated.tif),
     find the corresponding next-day image (JPG).
+    Ignores seconds - matches on date, hour, and minute only.
     Returns the JPG filename if found, None otherwise.
     """
     import os
     import re
+    import glob
     
     # Parse the TIF filename to get the date and time
-    match = re.match(r'(\d{4})-(\d{2})-(\d{2})T(\d{2})_(\d{2})_(\d{2})_rotated\.tif', tif_filename)
+    match = re.match(r'(\d{4})-(\d{2})-(\d{2})T(\d{2})_(\d{2})_(\d{2})_rotated\.tif', os.path.basename(tif_filename))
     if not match:
         return None
     
@@ -23,21 +25,29 @@ def find_matching_image(tif_filename):
     # Add 1 day
     next_day = tif_date + datetime.timedelta(days=1)
     
-    # Look for JPG files that match this next_day
-    # Try different channel suffixes
-    channels = ['Ch', 'Bh', 'Lh', 'Uh', 'Th']
+    # Get the directory of the TIF file
+    tif_dir = os.path.dirname(tif_filename) or "."
     
-    for channel in channels:
-        # Try files with same hour/minute
-        jpg_filename = next_day.strftime(f"%Y-%m-%dT%H_%M_%S_{channel}.jpg")
-        if os.path.exists(jpg_filename):
-            return jpg_filename
+    # Create pattern for matching JPG files (ignoring seconds)
+    # Pattern: YYYY-MM-DDTHH_MM_* to match any seconds and channel
+    search_pattern = os.path.join(tif_dir, next_day.strftime("%Y-%m-%dT%H_%M_") + "*.jpg")
+    
+    matching_files = glob.glob(search_pattern)
+    
+    # If not found in TIF directory, search current directory
+    if not matching_files:
+        search_pattern = next_day.strftime("%Y-%m-%dT%H_%M_") + "*.jpg"
+        matching_files = glob.glob(search_pattern)
+    
+    if matching_files:
+        # Return the full path to the match
+        return matching_files[0]
     
     return None
 
 def compare_images(tif_path, jpg_path):
     """
-    Display two images side by side with pixel grids for detailed comparison.
+    Display two images side by side for detailed comparison with cursor coordinates.
     """
     # Load images
     tif_img = Image.open(tif_path)
@@ -50,26 +60,18 @@ def compare_images(tif_path, jpg_path):
     ax1 = axes[0]
     ax1.imshow(tif_img)
     ax1.set_title(f'TIF: {tif_path}', fontsize=12)
-    ax1.grid(True, which='both', color='red', linewidth=0.5, alpha=0.5)
-    ax1.xaxis.set_major_locator(ticker.MultipleLocator(10))
-    ax1.yaxis.set_major_locator(ticker.MultipleLocator(10))
-    ax1.xaxis.set_minor_locator(ticker.MultipleLocator(1))
-    ax1.yaxis.set_minor_locator(ticker.MultipleLocator(1))
-    ax1.grid(True, which='minor', color='gray', linewidth=0.2, alpha=0.3)
+    ax1.set_xlabel('X pixel')
+    ax1.set_ylabel('Y pixel')
     
     # Display JPG on right
     ax2 = axes[1]
     ax2.imshow(jpg_img)
     ax2.set_title(f'JPG: {jpg_path}', fontsize=12)
-    ax2.grid(True, which='both', color='red', linewidth=0.5, alpha=0.5)
-    ax2.xaxis.set_major_locator(ticker.MultipleLocator(10))
-    ax2.yaxis.set_major_locator(ticker.MultipleLocator(10))
-    ax2.xaxis.set_minor_locator(ticker.MultipleLocator(1))
-    ax2.yaxis.set_minor_locator(ticker.MultipleLocator(1))
-    ax2.grid(True, which='minor', color='gray', linewidth=0.2, alpha=0.3)
+    ax2.set_xlabel('X pixel')
+    ax2.set_ylabel('Y pixel')
     
-    # Enable interactive zoom and pan
-    fig.suptitle('Use mouse to zoom/pan. Scroll to zoom in/out.', fontsize=10, color='blue')
+    # Enable interactive zoom and pan with cursor position display
+    fig.suptitle('Move mouse over image to see pixel coordinates. Scroll to zoom in/out.', fontsize=10, color='blue')
     
     plt.tight_layout()
     plt.show()
@@ -78,26 +80,31 @@ def compare_images(tif_path, jpg_path):
 if __name__ == "__main__":
     import os
     import glob
+    from tkinter import Tk, filedialog
     
-    # Find all TIF files
-    tif_files = sorted(glob.glob("*_rotated.tif"))
+    # Hide the root tkinter window
+    root = Tk()
+    root.withdraw()
     
-    if not tif_files:
-        print("No TIF files found!")
+    # Open file dialog to select a TIF file
+    tif_file = filedialog.askopenfilename(
+        title="Select a TIF file to compare",
+        filetypes=[("TIFF files", "*.tif"), ("All files", "*.*")],
+        initialdir="Images" if os.path.exists("Images") else "."
+    )
+    
+    if not tif_file:
+        print("No file selected.")
     else:
-        # Use the last TIF file
-        latest_tif = tif_files[-1]
-        print(f"Found TIF: {latest_tif}")
+        print(f"Selected TIF: {tif_file}")
         
         # Find matching JPG
-        matching_jpg = find_matching_image(latest_tif)
+        matching_jpg = find_matching_image(tif_file)
         
         if matching_jpg:
             print(f"Found matching JPG: {matching_jpg}")
-            compare_images(latest_tif, matching_jpg)
+            compare_images(tif_file, matching_jpg)
         else:
-            print(f"No matching JPG found for {latest_tif}")
-            print("\nAvailable JPG files:")
-            jpgs = glob.glob("*.jpg")
-            for jpg in sorted(jpgs):
-                print(f"  - {jpg}")
+            print(f"No matching JPG found for {tif_file}")
+            print("\nSearched for images matching the date pattern one day after the TIF.")
+
