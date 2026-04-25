@@ -24,3 +24,12 @@ python Colorization.py
 - Gist_Heat is a very nice looking colormap that works well.
 - https://docs.sunpy.org/en/stable/reference/visualization.html#module-sunpy.visualization.colormaps see this for the sunpy colormap. I quite look the look of "hinodesotintensity"
 
+## Coordinate Guide
+To run image comparison (to see how the Sun changed in a day):
+```
+python -m pip install matplotlib tkinter
+python compare_images.py
+```
+Select the image **in the folder containing your TIF image files (rotation corrected!) and your JPG files.**
+
+Close once done.
