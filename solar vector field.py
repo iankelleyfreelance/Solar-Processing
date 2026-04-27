@@ -55,6 +55,3 @@ plt.savefig(output_filename, dpi=96, bbox_inches='tight', pad_inches=0.1)
 print(f"Vector field saved to: {output_filename}")
 
 plt.show()
-
-plt.scatter(dataframe['BY'], dataframe['Magnitude'], cmap='viridis', s=10)
-plt.show()
