@@ -70,9 +70,6 @@ def compare_images(tif_path, jpg_path):
     ax2.set_xlabel('X pixel')
     ax2.set_ylabel('Y pixel')
     
-    # Enable interactive zoom and pan with cursor position display
-    fig.suptitle('Move mouse over image to see pixel coordinates. Scroll to zoom in/out.', fontsize=10, color='blue')
-    
     plt.tight_layout()
     plt.show()
 
